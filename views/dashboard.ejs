@@ -34,7 +34,6 @@
 		function initialize() {
 			window.db.ref(`subjects`).on('value', (snapshot) => {
 				window.subjectData = snapshot.val();
-				console.log(window.subjectData);
 			});
 			window.db.ref(`users/${window.user.uid}`).on('value', (snapshot) => {
 				window.userData = snapshot.val();
