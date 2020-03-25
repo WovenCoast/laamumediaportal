@@ -24,6 +24,17 @@ footer {
   font-size: 13px;
 }
 
+.footer-link {
+  color: var(--primary-color);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.footer-link:hover {
+  color: lightgray;
+  text-decoration: none;
+}
+
 .navbar {
   background-color: white;
 }
