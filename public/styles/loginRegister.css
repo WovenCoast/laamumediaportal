@@ -5,12 +5,18 @@
   left: 50%;
   -ms-transform: translate(-50%, -50%);
   transform: translate(-50%, -50%);
+  background-color: white !important;
 }
 
 .input-group-text {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
   color: var(--text-color);
+}
+
+input,
+button {
+  border-radius: 1rem !important;
 }
 
 h1 {
