@@ -58,7 +58,7 @@
 </body>
 
 <script>
-	if (window.auth.currentUser !== undefined) window.location.replace(domain + '/dashboard');
+	if (window.user != undefined) window.location.replace(domain + '/dashboard');
 	window.events.emit('onPageLoaded');
 	const registerE = document.getElementById('register');
 	const loginE = document.getElementById('login');
