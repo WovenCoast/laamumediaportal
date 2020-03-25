@@ -19,9 +19,17 @@ body {
   background-color: #eeeeee;
 }
 
-.navbar,
 footer {
-  background-color: darkslategrey;
+  background-color: #2e3235;
+  font-size: 13px;
+}
+
+.navbar {
+  background-color: white;
+}
+
+h1 {
+  font-size: 20px;
 }
 
 .container,

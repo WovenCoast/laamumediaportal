@@ -5,22 +5,22 @@
 	<%- include('layouts/loading') %>
 	<%- include('layouts/navbar', { active: "Dashboard" }) %>
 
-	<div class="container shadow" style="background-color: white !important;">
-		<div class="jumbotron">
+	<div class="container shadow" style="border-radius: 10px; background-color: white !important;">
+		<div class="jumbotron" style="background-color: #eeee!important;">
 			<h1>Enrolled classes</h1>
 			<div id="enrolled-classes" class="list-group">
 			</div>
 		</div>
 		<br>
-		<div class="jumbotron">
+		<div class="jumbotron" style="background-color: #eeee!important;">
 			<h1>Subject Material</h1>
 			<div id="subject-material" class="list-group"></div>
 		</div>
-		<div class="jumbotron">
+		<div class="jumbotron" style="background-color: #eeee!important;">
 			<h1>Assignments</h1>
 			<div id="assignments" class="list-group"></div>
 		</div>
-		<div class="jumbotron teacher-only">
+		<div class="jumbotron teacher-only" style="background-color: #eeee!important;">
 			<h1>Submissions</h1>
 			<div id="submissions" class="list-group"></div>
 		</div>
