@@ -1,0 +1,60 @@
+* {
+  --primary-color: #75cbfa;
+  --background-color: rgb(117, 203, 250, 0.4);
+  --text-color: white;
+}
+
+.list-group-item.active {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+#loading,
+body {
+  /* background-image: url("/images/lmi background.png");
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover; */
+  background-color: #f8f9fa;
+}
+
+.container,
+.jumbotron {
+  background-color: var(--background-color) !important;
+  border-radius: 5px;
+  padding: 20px;
+}
+
+.badge-lmi {
+  background-color: var(--primary-color);
+  color: var(--text-color);
+}
+
+.btn-lmi {
+  color: var(--text-color);
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-lmi:hover {
+  color: var(--primary-color);
+  background-color: var(--text-color);
+  border-color: var(--primary-color);
+}
+
+.btn-outline-lmi {
+  color: var(--primary-color) !important;
+  border-color: var(--primary-color);
+}
+
+.btn-outline-lmi:hover {
+  color: var(--text-color) !important;
+  background-color: var(--primary-color);
+}
+
+.btn-outline-lmi.focus,
+.btn-outline-lmi:focus {
+  box-shadow: 0 0 0 0.2rem var(--primary-color);
+  opacity: 50;
+}

@@ -1,0 +1,47 @@
+<div id="loading"
+	style="width: 100vw; height: 100vh; position: absolute; z-index: 9999; transition: opacity 0.7s ease-in-out 0s;">
+	<div
+		style="margin: 0;position: absolute;top: 50%;left: 50%;-ms-transform: translate(-50%, -50%);transform: translate(-50%, -50%); text-align: center; vertical-align: middle;">
+		<div class="spinner-border" role="status" style="color: var(--primary-color);">
+		</div>
+		<span id="loading-text">Loading...</span>
+	</div>
+</div>
+
+<script>
+	setTimeout(function () {
+		window.scrollTo(0, 0);
+	}, 150);
+	document.getElementById('loading').scrollTop = 0;
+	document.getElementsByTagName('body')[0].style.overflowY = "hidden";
+	const loadingTexts = ["Loading.", "Loading..", "Loading..."];
+	let loadingCount = loadingTexts.length - 1;
+	const loadingInterval = setInterval(() => {
+		// window.scrollTo(0, 0);
+		if (loadingCount + 1 === loadingTexts.length) {
+			loadingCount = 0;
+		} else {
+			loadingCount++;
+		}
+		document.getElementById('loading-text').innerHTML = loadingTexts[loadingCount];
+	}, 500);
+	window.events.on('onPageLoaded', function () {
+		document.getElementById('loading').style.opacity = 0;
+		$("#loading").one("webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend transitionEnd",
+			function (event) {
+				document.getElementById('loading').style.display = "none";
+				document.getElementsByTagName('body')[0].style.overflowY = "auto";
+				clearInterval(loadingInterval);
+			});
+	})
+	function startLoading(callback) {
+		document.getElementById('loading').style.opacity = 0;
+		document.getElementById('loading').style.display = "block";
+		document.getElementById('loading').style.opacity = 1;
+		callback();
+		// $("#loading").one("webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend transitionEnd",
+		// 	function (event) {
+		// 		callback();
+		// 	});
+	}
+</script>

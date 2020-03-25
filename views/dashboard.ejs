@@ -1,0 +1,337 @@
+<html>
+<%- include('layouts/head', { title: "Dashboard", styles: ["global"], scripts: [], requireAuth: true }) %>
+
+<body>
+	<%- include('layouts/loading') %>
+	<%- include('layouts/navbar', { active: "Dashboard" }) %>
+
+	<div class="container">
+		<div class="jumbotron">
+			<h1>Enrolled classes</h1>
+			<div id="enrolled-classes" class="list-group">
+			</div>
+		</div>
+		<br>
+		<div class="jumbotron">
+			<h1>Subject Material</h1>
+			<div id="subject-material" class="list-group"></div>
+		</div>
+		<div class="jumbotron">
+			<h1>Assignments</h1>
+			<div id="assignments" class="list-group"></div>
+		</div>
+		<div class="jumbotron teacher-only">
+			<h1>Submissions</h1>
+			<div id="submissions" class="list-group"></div>
+		</div>
+	</div>
+
+	<%- include('layouts/footer') %>
+
+	<script>
+		let selectedClass = "All";
+		window.events.on('onFirebaseLoaded', initialize);
+		function initialize() {
+			window.db.ref(`subjects`).on('value', (snapshot) => {
+				window.subjectData = snapshot.val();
+				console.log(window.subjectData);
+			});
+			window.db.ref(`users/${window.user.uid}`).on('value', (snapshot) => {
+				window.userData = snapshot.val();
+				if (!window.userData.teacher) {
+					$('.teacher-only').each((index, element) => element.remove());
+				}
+				let enrolledClassesHTML = "";
+				if (window.userData.admin) enrolledClassesHTML = enrolledClassesHTML + `<button data-toggle="modal" data-target="#subject-add" class="btn btn-outline-lmi list-group-item list-group-item-action">Add class</button>
+					<div class="modal fade" id="subject-add" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+						<div class="modal-dialog" role="document">
+							<div class="modal-content">
+								<div class="modal-header">
+									<h5 class="modal-title">Create new subject</h5>
+									<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+										<span aria-hidden="true">&times;</span>
+									</button>
+								</div>
+								<div class="modal-body">
+									<div class="form-group">
+										<label for="subjectAddName">Name of Subject</label>
+										<input type="name" class="form-control" id="subjectAddName">
+									</div>
+								</div>
+								<div class="modal-footer">
+									<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+									<button type="button" class="btn btn-lmi" data-dismiss="modal" onclick="window.db.ref('subjects/' + document.getElementById('subjectAddName').value).set({name: document.getElementById('subjectAddName').value}); initialize()">Add</button>
+								</div>
+							</div>
+						</div>
+					</div>`;
+				Array.from(window.userData ? window.userData.enrolledClasses : []).forEach((value) => {
+					enrolledClassesHTML = enrolledClassesHTML + `<button type="button" id="${value}" onclick="selectClass('${value}')" class="list-group-item list-group-item-action">${value}</button>`;
+				});
+				Object.keys(window.subjectData).filter(v => !Array.from(window.userData ? window.userData.enrolledClasses : []).includes(v)).forEach((value) => {
+					enrolledClassesHTML = enrolledClassesHTML + `<button type="button" data-toggle="modal" data-target="#enroll-${value}" id="${value}" class="d-flex justify-content-between list-group-item list-group-item-action">${value}<span class="badge badge-danger badge-pill">Not enrolled, click to enroll</span></button>
+						<div class="modal fade" id="enroll-${value}" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+							<div class="modal-dialog" role="document">
+								<div class="modal-content">
+									<div class="modal-header">
+										<h5 class="modal-title" id="staticBackdropLabel">Enroll in ${value}</h5>
+										<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+											<span aria-hidden="true">&times;</span>
+										</button>
+									</div>
+									<div class="modal-body">
+										If you enroll you will receive all the assignments from this subject and will not be able to unenroll.
+									</div>
+									<div class="modal-footer">
+										<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+										<button type="button" class="btn btn-lmi" data-dismiss="modal" onclick="window.db.ref('users/${window.user.uid}/enrolledClasses').set([ ...window.userData.enrolledClasses, '${value}' ]);initialize()">Add</button
+									</div>
+								</div>
+							</div>
+						</div>`;
+					delete window.subjectData[value];
+				});
+				document.getElementById('enrolled-classes').innerHTML = enrolledClassesHTML;
+				selectClass("All");
+				window.events.emit('onPageLoaded');
+			});
+		}
+		// function download(...args) {
+		// 	args.forEach(download => {
+		// 		var a = document.createElement("a");
+		// 		a.setAttribute('href');
+		// 		a.setAttribute('download', download);
+		// 		a.setAttribute('target', '_blank');
+		// 		a.click();
+		// 	})
+		// }
+		function selectClass(currentClass) {
+			selectedClass = currentClass;
+			const subject = window.subjectData[currentClass];
+			if (selectedClass === "All") {
+				window.subjectData["All"].assignments = [];
+				Object.keys(window.subjectData).forEach(subjectName => {
+					const temp = window.subjectData[subjectName];
+					if (!temp.assignments) window.subjectData[subjectName].assignments = [];
+					if (!temp.subjectMaterial) window.subjectData[subjectName].subjectMaterial = [];
+					temp.assignments.forEach((assignment, assignmentNumber) => window.subjectData["All"].assignments.push(assignment));
+				});
+			}
+			let subjectMaterialHTML = "";
+			let assignmentsHTML = "";
+			if (window.userData.teacher) {
+				if (selectedClass !== "All") {
+					subjectMaterialHTML = subjectMaterialHTML + `<button data-toggle="modal" data-target="#subject-material-add" class="btn btn-outline-lmi list-group-item list-group-item-action">Add subject material</button>
+						<div class="modal fade" id="subject-material-add" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+							<div class="modal-dialog" role="document">
+								<div class="modal-content">
+									<div class="modal-header">
+										<h5 class="modal-title" id="staticBackdropLabel">Add subject material</h5>
+										<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+											<span aria-hidden="true">&times;</span>
+										</button>
+									</div>
+									<div class="modal-body">
+										<div class="form-group">
+											<label for="contentAddTitle">Title</label>
+											<input type="email" class="form-control" id="contentAddTitle">
+										</div>
+										<div class="form-group">
+											<label for="contentAddDescription">Description</label>
+											<textarea class="form-control" id="contentAddDescription"></textarea>
+										</div>
+										<div class="form-group">
+											<label for="contentAddURL">URL</label>
+											<input type="url" class="form-control" id="contentAddURL" aria-describedby="urlHelp">
+											<small id="urlHelp" class="form-text text-muted">Separate content with commas to write more than one url</small>
+										</div>
+									</div>
+									<div class="modal-footer">
+										<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+										<button type="button" class="btn btn-lmi" data-dismiss="modal" onclick="const subjectMaterial = {title: document.getElementById('contentAddTitle').value, givenOn: new Date(Date.now()).toUTCString(), description: document.getElementById('contentAddDescription').value, urls: document.getElementById('contentAddURL').value.split(',')};window.db.ref('subjects/${selectedClass}/subjectMaterial/${window.subjectData[selectedClass].subjectMaterial.length}').set(subjectMaterial);window.db.ref('subjects/All/subjectMaterial/${window.subjectData["All"].subjectMaterial.length}').set({...subjectMaterial, title: '${selectedClass}: ' + document.getElementById('contentAddTitle').value });initialize()">Add</button>
+									</div>
+								</div>
+							</div>
+						</div>`;
+					assignmentsHTML = assignmentsHTML + `<button data-toggle="modal" data-target="#assignments-add" class="btn btn-outline-lmi list-group-item list-group-item-action">Add assignment</button>
+						<div class="modal fade" id="assignments-add" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+							<div class="modal-dialog" role="document">
+								<div class="modal-content">
+									<div class="modal-header">
+										<h5 class="modal-title" id="staticBackdropLabel">Add assignment</h5>
+										<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+										<span aria-hidden="true">&times;</span>
+										</button>
+									</div>
+									<div class="modal-body">
+										<div class="form-group">
+											<label for="assignmentsAddTitle">Title</label>
+											<input type="email" class="form-control" id="assignmentsAddTitle">
+										</div>
+										<div class="form-group">
+											<label for="assignmentsAddDescription">Description</label>
+											<textarea class="form-control" id="assignmentsAddDescription"></textarea>
+										</div>
+										<div class="form-group">
+											<label for="assignmentsAddDate">Due Date</label>
+											<input type="date" min="${new Date(Date.now()).toUTCString()}" class="form-control" id="assignmentsAddDate">
+										</div>
+										<div class="form-group">
+											<label for="assignmentsAddURL">URL</label>
+											<input type="url" class="form-control" id="assignmentsAddURL" aria-describedby="assignmentsAddURLHelp">
+											<small id="assignmentsAddURLHelp" class="form-text text-muted">Separate content with commas to write more than one url</small>
+										</div>
+									</div>
+									<div class="modal-footer">
+										<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+										<button type="button" class="btn btn-lmi" data-dismiss="modal" onclick="window.db.ref('subjects/${selectedClass}/assignments/${window.subjectData[selectedClass].assignments.length}').set({index: ${window.subjectData[selectedClass].assignments.length}, title: document.getElementById('assignmentsAddTitle').value, description: document.getElementById('assignmentsAddDescription').value, dueDate: new Date(document.getElementById('assignmentsAddDate').value).toUTCString(), subject: '${selectedClass}', urls: document.getElementById('assignmentsAddURL').value.split(',').map(v => v.trim())});selectClass('All')">Add</button>
+									</div>
+								</div>
+							</div>
+						</div>`;
+				}
+				let submissionsHTML = "";
+				const assignments = [];
+				if (currentClass === "All") {
+					Object.keys(window.subjectData).forEach(subjectName => {
+						const subject = window.subjectData[subjectName];
+						(subject.assignments || []).forEach((assignment, assignmentNumber) => assignments.push({ assignment, assignmentNumber, subject: subjectName }));
+					});
+				} else {
+					(subject.assignments || []).forEach((assignment, assignmentNumber) => assignments.push({ assignment, assignmentNumber, subject: assignment.subject }));
+				}
+				assignments.forEach(({ assignment, subject, assignmentNumber }, assignmentIndex) => {
+					Object.keys(assignment.submissions || {}).forEach((userId, submissionIndex) => {
+						const submission = (assignment.submissions || {})[userId];
+						if (!submission) return;
+						if (submission.marked || subject === "All") return;
+						const index = (assignmentIndex + 1) * (submissionIndex + 1) - 1;
+						submissionsHTML = submissionsHTML + `<button data-toggle="modal" data-target="#submissions-${index}" class="list-group-item list-group-item-action">${submission.name} - ${subject}: ${assignment.title}</button>
+							<div class="modal fade" id="submissions-${index}" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+								<div class="modal-dialog" role="document">
+									<div class="modal-content">
+										<div class="modal-header">
+											<h5 class="modal-title">${submission.name} - ${currentClass}</h5>
+											<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+											<span aria-hidden="true">&times;</span>
+											</button>
+										</div>
+										<div class="modal-body">
+											<div class="form-group">
+												<label for="${index}-submissionsPrivateComment">Private Comment from ${submission.name}</label>
+												<input type="text" class="form-control" id="${index}-submissionsPrivateComment" value="${submission.studentComment}" disabled>
+											</div>
+											<div class="form-group">
+												<label for="${index}-submissionsAttachments">Attachments</label>
+												<div class="list-group">${submission.attachments.map((attachment, attachmentId) => `<a class="list-group-item list-group-item-action" target="_blank" href="${attachment}">${attachment}</a>`).join('\n')}</div>
+											</div>
+											<div class="form-group">
+												<label for="${index}-submissionsTeacherComment">Comment to student</label>
+												<input type="text" class="form-control" id="${index}-submissionsTeacherComment">
+											</div>
+											<div class="form-group">
+												<label for="${index}-submissionsGrade">Grade</label>
+												<input type="range" min="0" max="100" value="50" class="form-control" id="${index}-submissionsGrade" oninput="document.getElementById('${index}-submissionsGradeValueDisplay').value=this.value;">
+												<input type="text" class="form-control" id="${index}-submissionsGradeValueDisplay" value="50" disabled>
+											</div>
+										</div>
+										<div class="modal-footer">
+											<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+											<button type="button" class="btn btn-lmi" data-dismiss="modal" onclick="const submission = window.subjectData['${subject}'].assignments[${assignmentNumber}].submissions['${userId}'];window.db.ref('subjects/${subject}/assignments/${assignmentNumber}/submissions/${userId}').set({ ...submission, marked: true, grade: parseFloat(document.getElementById('${index}-submissionsGrade').value), teachersComment: document.getElementById('${index}-submissionsTeacherComment').value }); initialize()">Mark</button>
+										</div>
+									</div>
+								</div>
+							</div>`;
+					});
+				});
+				if (submissionsHTML === "") submissionsHTML = `<div class="alert alert-success" role="alert">No submissions to be marked!</div>`;
+				document.getElementById('submissions').innerHTML = submissionsHTML;
+			}
+			subject.subjectMaterial.sort((a, b) => new Date(b.givenOn) - new Date(a.givenOn)).forEach((material, index) => {
+				subjectMaterialHTML = subjectMaterialHTML + `<button data-toggle="collapse" data-parent="#subject-material" data-target="#subject-material-${index}" class="list-group-item list-group-item-action d-flex justify-content-between">${material.title} <p><span class="badge badge-lmi">${new Date(material.givenOn).toDateString()}</span></p></button>
+				<div style="text-decoration: none; color: black; background-color: var(--primary-color);" href="${material.url}" id="subject-material-${index}" class="list-group-item collapse">
+					<div class="panel-body">${material.description}
+						<div class="list-group">
+							<button class="btn btn-lmi list-group-item" style="background-color: var(--primary-color);color: var(--text-color);" disabled>Materials</button>
+							${material.urls.map(url => `<a href="${url}" target="_blank" style="text-decoration: none" class="btn btn-lmi list-group-item">${url}</a>`)}
+						</div>
+					</div>
+				</div>`;
+			});
+			subject.assignments.forEach((assignment, index) => {
+				function calculateDayInYear(now) {
+					return Math.floor((now - (new Date(now.getFullYear(), 0, 0))) / (1000 * 60 * 60 * 24));
+				}
+				const currentDate = calculateDayInYear(new Date(Date.now()));
+				const assignmentDate = calculateDayInYear(new Date(assignment.dueDate));
+				const done = window.userData.teacher ? true : Object.keys(assignment.submissions || []).includes(window.user.uid);
+				if ((assignmentDate + 7) <= currentDate) {
+					window.subjectData[assignment.subject].assignments.splice(index, 1);
+					window.subjectData[assignment.subject].assignments = window.subjectData[assignment.subject].assignments.map((assignment, assignmentIndex) => {
+						assignment.index = assignmentIndex;
+						return assignment;
+					});
+					window.db.ref(`subjects/${assignment.subject}/assignments`).set(window.subjectData[assignment.subject].assignments);
+					return;
+				};
+				const submission = (assignment.submissions || {})[window.user.uid] || {};
+				assignmentsHTML = assignmentsHTML + `<button ${done ? `data-toggle="collapse"` : `data-toggle="modal"`} data-target="#assignments-${index}" class="list-group-item list-group-item-action d-flex justify-content-between">${selectedClass !== "All" ? "" : `${assignment.subject}: `}${assignment.title} <p>${assignmentDate - currentDate >= 0 ? `<span class="badge badge-success">${(assignmentDate - currentDate) + 1} day${assignmentDate - currentDate === 0 ? "" : "s"} left (Including today)</span>` : `<span class="badge badge-danger">Due ${currentDate - assignmentDate} day${currentDate - assignmentDate === 1 ? "" : "s"} ago</span>`} ${window.userData.teacher ? "" : (done ? (submission.marked ? `<span class="badge badge-success">Work done</span> <span class="badge badge-lmi">${submission.grade}/100</span>` : `<span class="badge badge-lmi">Marking in progress</span>`) : `<span class="badge badge-danger">Not done</span>`)}</p></button>
+					${done ? `<div id="assignments-${index}" style="color: black; background-color: var(--primary-color);" class="list-group-item collapse">
+						<div class="panel-body">${assignment.description}
+							${(submission || {}).marked ? `<div class="list-group">
+								<button class="btn btn-lmi list-group-item" style="background-color: var(--primary-color);color: var(--text-color);" disabled>Teachers comment</button>
+								<button class="btn btn-lmi list-group-item">${submission.teachersComment}</button>
+							</div><br>` : ""}
+							<div class="list-group">
+								<button class="btn btn-lmi list-group-item" style="background-color: var(--primary-color);color: var(--text-color);" disabled>Materials</button>
+								${assignment.urls.map(url => `<a href="${url}" target="_blank" style="text-decoration: none" class="btn btn-lmi list-group-item">${url}</a>`).join("")}
+							</div>
+						</div>
+					</div>` : `<div class="modal fade" id="assignments-${index}" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+						<div class="modal-dialog" role="document">
+							<div class="modal-content">
+								<div class="modal-header">
+									<h5 class="modal-title">${assignment.title}</h5>
+									<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+										<span aria-hidden="true">&times;</span>
+									</button>
+								</div>
+								<div class="modal-body">
+									<div class="form-group">
+										<label for="${index}-assignmentDescription">Description</label>
+										<textarea class="form-control" id="${index}-assignmentDescription" disabled>${assignment.description}</textarea>
+									</div>
+									<div class="form-group">
+										<label for="${index}-assignmentAttachments">Attachments</label>
+										<div class="list-group">${assignment.urls.map((url, urlId) => `<a class="list-group-item list-group-item-action" download href="${url}">${url}</a>`).join('\n')}</div>
+									</div>
+									<div class="form-group">
+										<label for="${index}-assignmentURL">URL</label>
+										<input type="url" class="form-control" id="${index}-assignmentURL" aria-describedby="${index}-assignmentURLHelp">
+										<small id="${index}-assignmentURLHelp" class="form-text text-muted">Upload your content to Google Drive, separate content with commas to write more than one url</small>
+									</div>
+									<div class="form-group">
+										<label for="${index}-studentComment">Student Comment</label>
+										<input type="text" class="form-control" id="${index}-studentComment">
+									</div>
+								</div>
+								<div class="modal-footer">
+									<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+									<button type="button" class="btn btn-lmi" data-dismiss="modal" onclick="window.db.ref('subjects/${assignment.subject}/assignments/${assignment.index}/submissions').child('${window.user.uid}').set({ attachments: document.getElementById('${index}-assignmentURL').value.split(',').map(v => v.trim()), grade: -1, marked: false, name: '${window.user.displayName}', studentComment: document.getElementById('${index}-studentComment').value }); initialize()">Submit assignment</button>
+								</div>
+							</div>
+						</div>
+					</div>`}`;
+			})
+			if (assignmentsHTML === "") assignmentsHTML = window.userData.teacher ? `<div class="alert alert-success" role="alert">Select a class other than "All" to add assignments</div>` : `<div class="alert alert-success" role="alert">No assignments to be completed!</div>`;
+			document.getElementById('assignments').innerHTML = assignmentsHTML;
+			document.getElementById('subject-material').innerHTML = subjectMaterialHTML;
+			window.userData.enrolledClasses.forEach(enrolledClass => {
+				$(`#${enrolledClass}`).removeClass('active');
+			});
+			$(`#${currentClass}`).addClass('active');
+		}
+	</script>
+</body>
+
+</html>

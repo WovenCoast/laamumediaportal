@@ -1,0 +1,168 @@
+<html>
+<%- include('layouts/head', { title: "Login", styles: ["global", "loginRegister"], scripts: [], requireAuth: false }) %>
+
+<body>
+	<%- include('layouts/loading') %>
+	<div class="container">
+		<div id="login">
+			<h1>Login</h1>
+			<div class="form-group">
+				<label for="emailL">Email address</label>
+				<input type="email" class="form-control" id="emailL">
+				<div id="emailLFeedback"></div>
+			</div>
+			<div class="form-group">
+				<label for="passwordL">Password</label>
+				<input type="password" class="form-control" id="passwordL">
+				<div id="passwordLFeedback"></div>
+			</div>
+			<button class="btn btn-block btn-lmi"
+				onclick="login(document.getElementById('emailL').value, document.getElementById('passwordL').value)">Login</button>
+			<button class="btn btn-block btn-lmi" style="margin-top: 25px;" onclick="toggle()">Don't have an account?
+				Register</button>
+		</div>
+		<div id="register">
+			<h1>Register</h1>
+			<div class="form-group">
+				<label for="nameR">Full Name</label>
+				<input type="text" class="form-control" id="nameR">
+				<div id="nameRFeedback"></div>
+			</div>
+			<div class="form-group">
+				<label for="emailR">Email address</label>
+				<input type="email" class="form-control" id="emailR">
+				<div id="emailRFeedback"></div>
+			</div>
+			<div class="form-group">
+				<label for="mobileR">Phone Number</label>
+				<div class="input-group">
+					<div class="input-group-prepend">
+						<span class="input-group-text">+960</span>
+					</div>
+					<input type="text" class="form-control" id="mobileR" placeholder="7000000">
+				</div>
+				<div id="mobileRFeedback"></div>
+			</div>
+			<div class="form-group">
+				<label for="passwordR">Password</label>
+				<input type="password" class="form-control" id="passwordR">
+				<div id="passwordRFeedback"></div>
+			</div>
+			<button class="btn btn-block btn-lmi"
+				onclick="register(document.getElementById('nameR').value, document.getElementById('emailR').value, '+960' + document.getElementById('mobileR').value, document.getElementById('passwordR').value)">Register
+				and Login</button>
+			<button class="btn btn-block btn-lmi" style="margin-top: 25px;" onclick="toggle()">Already have an account?
+				Login</button>
+		</div>
+	</div>
+</body>
+
+<script>
+	if (window.auth.currentUser) window.location.replace(domain + '/dashboard');
+	window.events.emit('onPageLoaded');
+	const registerE = document.getElementById('register');
+	const loginE = document.getElementById('login');
+	var loginPage = false;
+	toggle();
+	function toggle() {
+		loginPage = !loginPage;
+		if (loginPage) {
+			loginE.style.display = "block";
+			registerE.style.display = "none";
+			document.title = "Login | Laamu Media Institute"
+		} else {
+			registerE.style.display = "block";
+			loginE.style.display = "none";
+			document.title = "Register | Laamu Media Institute"
+		}
+		["emailL", "passwordL", "nameR", "emailR", "mobileR", "passwordR"].forEach(input => {
+			$(`#${input}`).removeClass("is-valid").removeClass("is-invalid").val("");
+			$(`#${input}Feedback`).removeClass("valid-feedback").removeClass("invalid-feedback").text("");
+		})
+	}
+	function login(email, password) {
+		if (!validateLogin(email, password)) return;
+		firebase.auth().signInWithEmailAndPassword(email, password).then(() => {
+			startLoading(() => window.location.href = domain + "/dashboard");
+		}).catch(function (error) {
+			// Handle Errors here.
+			var errorCode = error.code;
+			var errorMessage = error.message;
+			console.error(`Error ${errorCode}: ${errorMessage}`);
+		});
+	}
+	function validateLogin(email, password) {
+		let valid = true;
+		if (!(email.includes("@"))) {
+			$("#emailL").addClass('is-invalid');
+			$("#emailLFeedback").addClass('invalid-feedback').text("Invalid email")
+			valid = false;
+		}
+		if (!(password.length > 8 && password.length < 20)) {
+			$("#passwordL").addClass('is-invalid');
+			$("#passwordLFeedback").addClass('invalid-feedback').text("Password must be 8-20 characters")
+			valid = false;
+		}
+		if (!(/[0-9]/.test(password))) {
+			$("#passwordL").addClass('is-invalid');
+			$("#passwordLFeedback").addClass('invalid-feedback').text("Password must include a number");
+			valid = false;
+		}
+		return valid;
+	}
+	function register(fullname, email, mobile, password) {
+		if (!validateRegister(fullname, email, mobile, password)) return;
+		window.auth.createUserWithEmailAndPassword(email, password).then(() => {
+			window.auth.signInWithEmailAndPassword(email, password).then(() => {
+				firebase.auth().currentUser.updateProfile({ displayName: fullname, phoneNumber: mobile });
+				// window.db.collection('users').doc(window.auth.currentUser.uid).set({ teacher: false, enrolledClasses: [] });
+				firebase.database().ref('users/' + firebase.auth().currentUser.uid).set({ displayName: fullname, admin: false, teacher: false, enrolledClasses: ["All"] });
+				startLoading(() => window.location.href = domain + "/dashboard");
+			}).catch(function (error) {
+				// Handle Errors here.
+				var errorCode = error.code;
+				var errorMessage = error.message;
+				console.error(`Error ${errorCode}: ${errorMessage}`);
+			});
+		}).catch(function (error) {
+			// Handle Errors here.
+			var errorCode = error.code;
+			var errorMessage = error.message;
+			console.error(`Error ${errorCode}: ${errorMessage}`);
+		});
+	}
+	function validateRegister(fullname, email, mobile, password) {
+		let valid = true;
+		if (!(fullname.includes(" "))) {
+			$("#nameR").addClass('is-invalid');
+			$("#nameRFeedback").addClass('invalid-feedback').text("Your fullname must have a space")
+			valid = false;
+		}
+		if (!(email.includes("@"))) {
+			$("#emailR").addClass('is-invalid');
+			$("#emailRFeedback").addClass('invalid-feedback').text("Invalid email");
+			valid = false;
+		}
+		if (!(["7", "9"].includes(mobile[4]))) {
+			$("#mobileR").addClass('is-invalid');
+			$("#mobileRFeedback").addClass('invalid-feedback').text("Mobile numbers must start with 7 or 9");
+		}
+		if (!(mobile.length === 11)) {
+			$("#mobileR").addClass('is-invalid');
+			$("#mobileRFeedback").addClass('invalid-feedback').text("Mobile numbers must be 7 numbers long");
+		}
+		if (!(password.length > 8 && password.length < 20)) {
+			$("#passwordR").addClass('is-invalid');
+			$("#passwordRFeedback").addClass('invalid-feedback').text("Password must be 8-20 characters");
+			valid = false;
+		}
+		if (!(/[0-9]/.test(password))) {
+			$("#passwordR").addClass('is-invalid');
+			$("#passwordRFeedback").addClass('invalid-feedback').text("Password must include a number");
+			valid = false;
+		}
+		return valid;
+	}
+</script>
+
+</html>

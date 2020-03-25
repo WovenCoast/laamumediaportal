@@ -1,0 +1,100 @@
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="shortcut icon" href="/images/laamumedia.png" type="image/x-icon">
+	<% if (requireAuth) { %>
+	<meta name="requireAuth" content="true">
+	<% } %>
+	<title><%- title %> | Laamu Media Institute</title>
+
+	<!-- The core Firebase JS SDK is always required and must be listed first -->
+	<script src="https://www.gstatic.com/firebasejs/7.12.0/firebase-app.js"></script>
+
+	<!-- TODO: Add SDKs for Firebase products that you want to use
+     https://firebase.google.com/docs/web/setup#available-libraries -->
+	<script src="https://www.gstatic.com/firebasejs/7.12.0/firebase-analytics.js"></script>
+	<!-- Add Firebase products that you want to use -->
+	<script src="https://www.gstatic.com/firebasejs/7.12.0/firebase-auth.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/7.12.0/firebase-database.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/7.12.0/firebase-storage.js"></script>
+
+	<!-- Bootstrap CSS -->
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+		integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+	<!-- FontAwesome CSS -->
+	<link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"
+		integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+
+	<!-- Custom CSS -->
+	<% styles.forEach(css => { %>
+	<link rel="stylesheet" href="styles/<%- css %>.css">
+	<% }) %>
+
+	<!-- Bootstrap JS -->
+	<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+		integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+		crossorigin="anonymous"></script>
+	<!-- Popper.js -->
+	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+		integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+		crossorigin="anonymous"></script>
+	<!-- jQuery -->
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+		integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+		crossorigin="anonymous"></script>
+
+	<script>
+		class EventEmitter {
+			constructor() {
+				this.events = {};
+			}
+			on(eventName, callback) {
+				if (!this.events[eventName]) this.events[eventName] = [];
+				this.events[eventName].push(callback);
+			}
+			emit(eventName, ...args) {
+				if (!this.events[eventName]) this.events[eventName] = [];
+				this.events[eventName].forEach(event => {
+					event(args);
+				});
+			}
+		}
+		window.events = new EventEmitter();
+		const domain = "http://localhost:3000";
+		const firebaseConfig = {
+			apiKey: "AIzaSyDulLqNzVmA_9BT_E5m-UTZyQ2BcJoD_3M",
+			authDomain: "laamu-media-test.firebaseapp.com",
+			databaseURL: "https://laamu-media-test.firebaseio.com",
+			projectId: "laamu-media-test",
+			storageBucket: "laamu-media-test.appspot.com",
+			messagingSenderId: "535758010989",
+			appId: "1:535758010989:web:062be195e1e298bd275d64",
+			measurementId: "G-SRN6G9MCXZ"
+		};
+		(async () => {
+			await firebase.initializeApp(firebaseConfig);
+			await firebase.analytics();
+			window.db = await firebase.database();
+			window.auth = await firebase.auth();
+			window.storage = await firebase.storage();
+
+			auth.onAuthStateChanged(function (user) {
+				if (user) {
+					window.user = user;
+					window.events.emit('onFirebaseLoaded');
+				} else {
+					window.user = null;
+					if ($('meta[name="requireAuth"]').attr('content') === "true") {
+						window.location.replace(domain);
+					}
+				}
+			});
+		})();
+	</script>
+
+	<!-- Custom JS -->
+	<% scripts.forEach(script => { %>
+	<script src="<%- script %>.js"></script>
+	<% }) %>
+</head>
