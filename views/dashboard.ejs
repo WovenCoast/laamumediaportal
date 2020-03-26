@@ -1,5 +1,5 @@
 <html>
-<%- include('layouts/head', { title: "Dashboard", styles: ["global"], scripts: [], requireAuth: true, domain }) %>
+<%- include('layouts/head', { title: "Dashboard", styles: ["global"], scripts: [], requireAuth: true }) %>
 
 <body>
 	<%- include('layouts/loading') %>
@@ -73,7 +73,7 @@
 					enrolledClassesHTML = enrolledClassesHTML + `<button type="button" id="${value}" onclick="selectClass('${value}')" class="list-group-item list-group-item-action">${value}</button>`;
 				});
 				Object.keys(window.subjectData).filter(v => !Array.from(window.userData ? window.userData.enrolledClasses : []).includes(v)).forEach((value) => {
-					enrolledClassesHTML = enrolledClassesHTML + `<button type="button" data-toggle="modal" data-target="#enroll-${value}" id="${value}" class="d-flex justify-content-between list-group-item list-group-item-action">${value}<span class="badge badge-danger badge-pill">Not enrolled, click to enroll</span></button>
+					enrolledClassesHTML = enrolledClassesHTML + `<button type="button" data-toggle="modal" data-target="#enroll-${value}" class="d-flex justify-content-between list-group-item list-group-item-action">${value}<span class="badge badge-danger badge-pill">Not enrolled, click to enroll</span></button>
 						<div class="modal fade" id="enroll-${value}" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdropLabel" aria-hidden="true">
 							<div class="modal-dialog" role="document">
 								<div class="modal-content">
@@ -84,15 +84,16 @@
 										</button>
 									</div>
 									<div class="modal-body">
-										If you enroll you will receive all the assignments from this subject and will not be able to unenroll.
+										If you enroll you will receive all the assignments from this subject.
 									</div>
 									<div class="modal-footer">
 										<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-										<button type="button" class="btn btn-lmi" data-dismiss="modal" onclick="window.db.ref('users/${window.user.uid}/enrolledClasses').set([ ...window.userData.enrolledClasses, '${value}' ]);initialize()">Add</button
+										<button type="button" class="btn btn-lmi" data-dismiss="modal" onclick="window.db.ref('users/${window.user.uid}/enrolledClasses').set([ ...window.userData.enrolledClasses, '${value}' ].sort());initialize()">Add</button
 									</div>
 								</div>
 							</div>
-						</div>`;
+						</div>
+					</div>`;
 					delete window.subjectData[value];
 				});
 				document.getElementById('enrolled-classes').innerHTML = enrolledClassesHTML;

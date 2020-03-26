@@ -35,15 +35,15 @@ webserver.use(express.static(path.join(__dirname, './public'), { index: false, e
 
 // Routing
 webserver.get('/', (req, res) => {
-	res.status(200).render('loginRegister', { domain: req.headers.host });
+	res.status(200).render('loginRegister');
 });
 webserver.get('/dashboard', (req, res) => {
-	res.status(200).render('dashboard', { domain: req.headers.host });
+	res.status(200).render('dashboard');
 })
 
 // Listen and handle 404 requests
 webserver.use((req, res, next) => {
-	res.status(404).render('404', { url: req.baseUrl, domain: req.headers.host });
+	res.status(404).render('404', { url: req.baseUrl });
 });
 webserver.listen(process.env.PORT || 3000, () => {
 	console.log(`Listening on port ${process.env.PORT || 3000}`)

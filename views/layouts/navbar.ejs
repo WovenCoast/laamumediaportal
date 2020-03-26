@@ -17,9 +17,81 @@
 			</li>
 			<% }) %>
 		</ul>
-		<span id="profile" class="navbar-text">
+		<div class="form-inline">
 			<script>window.events.on('onFirebaseLoaded', () => document.getElementById("profile").innerHTML = window.user.displayName)</script>
-		</span>
+			<!-- <button id="profile" class="navbar-text"></button> -->
+			<div class="btn-group">
+				<button id="profile" type="button" class="btn btn-lmi dropdown-toggle" data-toggle="dropdown"
+					aria-haspopup="true" aria-expanded="false">
+					Action
+				</button>
+				<div class="dropdown-menu">
+					<button class="dropdown-item btn-outline-lmi" data-toggle="modal" data-target="#editProfile">Edit
+						Profile</button>
+
+					<div class="dropdown-divider"></div>
+					<button class="dropdown-item btn-danger" onclick="firebase.auth().signOut()">Logout</button>
+				</div>
+			</div>
+		</div>
 	</div>
 </nav>
+
+<div class="modal fade" id="editProfile" data-backdrop="static" tabindex="-1" role="dialog"
+	aria-labelledby="staticBackdropLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="editProfileLabel">Edit Profile</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<div class="form-group">
+					<label for="emailInput">Email address</label>
+					<input type="email" class="form-control" id="emailInput" disabled>
+				</div>
+				<div class="form-group">
+					<label for="displayNameInput">Display Name</label>
+					<input type="text" class="form-control" id="displayNameInput">
+				</div>
+				<div class="form-group">
+					<label for="phoneInput">Phone Number</label>
+					<div class="input-group">
+						<div class="input-group-prepend">
+							<span class="input-group-text">+960</span>
+						</div>
+						<input type="text" class="form-control" id="phoneInput" placeholder="7000000">
+					</div>
+				</div>
+				<div class="form-group">
+					<label>Enrolled Classes</label>
+					<ul id="selectedClasses" class="list-group"></ul>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal"
+					onclick="initialize()">Close</button>
+				<button type="button" class="btn btn-lmi" data-dismiss="modal" onclick="updateUser()">Update
+					changes</button>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+	window.events.on('onPageLoaded', () => {
+		$('#emailInput').val(window.user.email);
+		$('#displayNameInput').val(window.user.displayName);
+		$('#phoneInput').val(window.userData.phoneNumber);
+		$('#selectedClasses').html(window.userData.enrolledClasses.sort().map((enrolledClass, index) => enrolledClass === "All" ? `<li class="list-group-item d-flex justify-content-between align-items-center">${enrolledClass}</li>` : `<li id="${index}-selectedClasses" class="list-group-item d-flex justify-content-between align-items-center">${enrolledClass}<button class="btn btn-danger" onclick="window.userData.enrolledClasses.splice(${index}, 1);$('#${index}-selectedClasses')[0].parentNode.removeChild($('#${index}-selectedClasses')[0]);">X</button></li>`))
+	});
+	function updateUser() {
+		const fullname = $('#displayNameInput').val();
+		const mobile = $('#phoneInput').val();
+		firebase.auth().currentUser.updateProfile({ displayName: fullname, phoneNumber: mobile });
+		firebase.database().ref('users/' + firebase.auth().currentUser.uid).set({ ...window.userData, displayName: fullname, phoneNumber: mobile, enrolledClasses: window.userData.enrolledClasses.sort() });
+		setTimeout(initialize, 100);
+	}
+</script>
 <div style="height: 10px;"></div>

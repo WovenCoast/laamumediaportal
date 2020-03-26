@@ -2,7 +2,6 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="shortcut icon" href="/images/laamumedia.png" type="image/x-icon">
-	<meta name="domain" content="<%- domain %>">
 	<% if (requireAuth) { %>
 	<meta name="requireAuth" content="true">
 	<% } %>
@@ -45,20 +44,23 @@
 		class EventEmitter {
 			constructor() {
 				this.events = {};
+				this.calledEvents = {};
 			}
 			on(eventName, callback) {
+				if (Object.keys(this.calledEvents).includes(eventName)) callback(...this.calledEvents[eventName]);
 				if (!this.events[eventName]) this.events[eventName] = [];
 				this.events[eventName].push(callback);
 			}
 			emit(eventName, ...args) {
 				if (!this.events[eventName]) this.events[eventName] = [];
+				this.calledEvents[eventName] = args;
 				this.events[eventName].forEach(event => {
 					event(args);
 				});
 			}
 		}
 		window.events = new EventEmitter();
-		const domain = 'http://' + $('meta[name="domain"]').attr('content');
+		const domain = 'https://edu.laamumedia.com';
 		const firebaseConfig = {
 			apiKey: "AIzaSyDulLqNzVmA_9BT_E5m-UTZyQ2BcJoD_3M",
 			authDomain: "laamu-media-test.firebaseapp.com",

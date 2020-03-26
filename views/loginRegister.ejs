@@ -1,5 +1,5 @@
 <html>
-<%- include('layouts/head', { title: "Login", styles: ["global", "loginRegister"], scripts: [], requireAuth: false, domain }) %>
+<%- include('layouts/head', { title: "Login", styles: ["global", "loginRegister"], scripts: [], requireAuth: false }) %>
 
 <body>
 	<%- include('layouts/loading') %>
@@ -116,8 +116,7 @@
 		window.auth.createUserWithEmailAndPassword(email, password).then(() => {
 			window.auth.signInWithEmailAndPassword(email, password).then(() => {
 				firebase.auth().currentUser.updateProfile({ displayName: fullname, phoneNumber: mobile });
-				// window.db.collection('users').doc(window.auth.currentUser.uid).set({ teacher: false, enrolledClasses: [] });
-				firebase.database().ref('users/' + firebase.auth().currentUser.uid).set({ displayName: fullname, admin: false, teacher: false, enrolledClasses: ["All"] });
+				firebase.database().ref('users/' + firebase.auth().currentUser.uid).set({ displayName: fullname, phoneNumber: mobile, admin: false, teacher: false, enrolledClasses: ["All"] });
 				startLoading(() => window.location.href = domain + "/dashboard");
 			}).catch(function (error) {
 				// Handle Errors here.
