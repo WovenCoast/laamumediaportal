@@ -84,7 +84,7 @@
 		$('#emailInput').val(window.user.email);
 		$('#displayNameInput').val(window.user.displayName);
 		$('#phoneInput').val(window.userData.phoneNumber);
-		$('#selectedClasses').html(window.userData.enrolledClasses.sort().map((enrolledClass, index) => enrolledClass === "All" ? `<li class="list-group-item d-flex justify-content-between align-items-center">${enrolledClass}</li>` : `<li id="${index}-selectedClasses" class="list-group-item d-flex justify-content-between align-items-center">${enrolledClass}<button class="btn btn-danger" onclick="window.userData.enrolledClasses.splice(${index}, 1);$('#${index}-selectedClasses')[0].parentNode.removeChild($('#${index}-selectedClasses')[0]);">X</button></li>`))
+		$('#selectedClasses').html(window.userData.enrolledClasses.sort().map((enrolledClass, index) => enrolledClass === "All" ? `<li class="list-group-item d-flex justify-content-between align-items-center">${enrolledClass}</li>` : `<li id="${index}-selectedClasses" class="list-group-item d-flex justify-content-between align-items-center">${enrolledClass}<button class="btn btn-danger" onclick="window.userData.enrolledClasses.splice(window.userData.enrolledClasses.indexOf(${value}), 1);$('#${index}-selectedClasses')[0].parentNode.removeChild($('#${index}-selectedClasses')[0]);">X</button></li>`))
 	});
 	function updateUser() {
 		const fullname = $('#displayNameInput').val();
